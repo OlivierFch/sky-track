@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Vec3 } from "../../types";
+import { Vec3 } from "../../../core/types";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 interface SatelliteData {

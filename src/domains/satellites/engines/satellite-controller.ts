@@ -1,4 +1,4 @@
-import { Vec3 } from "../../types";
+import { Vec3 } from "../../../core/types";
 import { SatelliteEngine } from "./satellite-engine";
 
 /**
