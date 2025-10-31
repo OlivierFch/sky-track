@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { twoline2satrec } from "satellite.js";
-import { getLatLonAltFromTLE, latLonToCartesian } from "../../lib/orbit";
-import { TLE, Vec3 } from "../../types";
+import { TLE, Vec3 } from "../../../core/types";
+import { getLatLonAltFromTLE, latLonToCartesian } from "../utils/orbit";
+
 
 const useSatelliteTrail = (
   tle: TLE | null,
-  opts: { windowSec?: number; stepSec?: number; radius?: number } = {}
+  opts: {stepSec?: number; radius?: number } = {}
 ) => {
-  const { windowSec = 600, stepSec = 5, radius = 1.03 } = opts;
+  const { stepSec = 5, radius = 1.03 } = opts;
   const [trail, setTrail] = useState<Vec3[]>([]);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ const useSatelliteTrail = (
     compute();
     const id = setInterval(compute, 5000);
     return () => clearInterval(id);
-  }, [tle, windowSec, stepSec, radius]);
+  }, [tle, stepSec, radius]);
 
   return trail;
 };

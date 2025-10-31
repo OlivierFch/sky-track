@@ -1,5 +1,5 @@
 import { twoline2satrec, propagate, gstime, eciToGeodetic, degreesLong, degreesLat } from "satellite.js";
-import type { LatLngAlt, TLE } from "../types";
+import { TLE, LatLngAlt } from "../../../core/types";
 
 function now() {
   return new Date();

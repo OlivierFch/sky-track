@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { GlobeEngine } from "../lib/three/globe-engine";
-import { SatelliteController } from "../lib/three/satellite-controller";
-import { ISatellite, GlobeVisibility } from "../types";
-import { Satellite } from "./satellite";
-import { GlobeHint } from "./globe-hint/globe-hint";
+import { ISatellite, GlobeVisibility } from "../../../../core/types";
+import { Satellite } from "../../../satellites/components/satellite";
+import { SatelliteController } from "../../../satellites/engines/satellite-controller";
+import { GlobeEngine } from "../../engines/globe-engine";
+import { GlobeHint } from "../globe-hint/globe-hint";
 
 interface GlobeProps {
     satellites: ISatellite[];

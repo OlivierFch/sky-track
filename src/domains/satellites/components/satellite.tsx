@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import { ISatellite } from "../types";
-import { SatelliteController } from "../lib/three/satellite-controller";
-import { useSatellitePosition } from "../hooks/satellite/use-satellite-position";
-import { useSatelliteTrail } from "../hooks/satellite/use-satellite-trail";
-import { latLonToCartesian } from "../lib/orbit";
+import { SatelliteController } from "../engines/satellite-controller";
+import { latLonToCartesian } from "../utils/orbit";
+import { ISatellite } from "../../../core/types";
+import { useSatellitePosition } from "../hooks/use-satellite-position";
+import { useSatelliteTrail } from "../hooks/use-satellite-trail";
 
 type SatelliteProps = {
   satellite: ISatellite;
@@ -21,10 +21,9 @@ const Satellite = ({ satellite, controller }: SatelliteProps) => {
     }, [id, color]);
 
     useEffect(() => {
-        if (pos && trail.length) {
+        if (!pos || trail.length === 0) return;
         const positionInVec3 = latLonToCartesian(pos.lat, pos.lon, 1.04);
         controller?.update(id, positionInVec3, trail);
-        }
     }, [pos, trail]);
 
     return null;

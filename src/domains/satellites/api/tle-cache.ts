@@ -1,51 +1,27 @@
-import type { TLE } from '../types'
-
+import { TLE } from "../../../core/types";
 
 const TLE_CACHE_PREFIX = "tle_cache_";
 const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
 
-const fetchTLEFor = async (name: string): Promise<TLE> => {
-  const key = TLE_CACHE_PREFIX + name;
-  const cached = localStorage.getItem(key);
 
-  if (cached) {
-    const { expiry, data } = JSON.parse(cached);
-    if (Date.now() < expiry) {
-      return data;
-    }
-  }
+const loadTLECache = (name: string): TLE | null => {
+    const raw = localStorage.getItem(TLE_CACHE_PREFIX + name);
+    if (!raw) return null;
 
-  // Fetch new data
-  const url = `https://celestrak.org/NORAD/elements/gp.php?NAME=${encodeURIComponent(name)}&FORMAT=TLE`;
-  const response = await fetch(url);
+    try {
+        const { expiry, data } = JSON.parse(raw);
+        if (Date.now() < expiry) return data;
+    } catch {}
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch TLE for ${name}: ${response.statusText}`);
-  }
+    return null;
+};
 
-  const text = await response.text();
-  const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
-
-  if (lines.length < 2) {
-    throw new Error(`Invalid TLE data for ${name}`);
-  }
-
-  const tle: TLE = {
-    name: lines[0],
-    line1: lines[1],
-    line2: lines[2],
-  };
-
-  localStorage.setItem(
-    key,
-    JSON.stringify({
-      expiry: Date.now() + CACHE_DURATION_MS,
-      data: tle,
-    })
-  );
-
-  return tle;
-}
+const saveTLECache = (name: string, tle: TLE): void => {
+    localStorage.setItem(
+        TLE_CACHE_PREFIX + name,
+        JSON.stringify({ expiry: Date.now() + CACHE_DURATION_MS, data: tle })
+    );
+};
 
 
 type ClearLocalStorageCacheMode = "all" | "expired" | "single";
@@ -84,7 +60,6 @@ const clearTLECache = (mode: ClearLocalStorageCacheMode = "expired", name?: stri
       }
     }
   });
-}
+};
 
-
-export { clearTLECache, fetchTLEFor };
+export { clearTLECache, loadTLECache, saveTLECache };

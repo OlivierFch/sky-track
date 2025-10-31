@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { GlobeVisibility, Vec3 } from "../../types";
-import { SatelliteEngine } from "./satellite-engine";
+import { GlobeVisibility } from "../../../core/types";
+import { SatelliteEngine } from "../../satellites/engines/satellite-engine";
 
 export class GlobeEngine {
   private scene: THREE.Scene;

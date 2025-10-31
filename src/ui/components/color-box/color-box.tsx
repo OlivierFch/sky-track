@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
-import { randomHexColor } from "../../lib/random-hex-color";
-import { HexColor } from "../../types";
+import { HexColor } from "../../../core/types";
+import { randomHexColor } from "../../../core/utils/random-hex-color";
 
 const ColorSwatch = ({
   color,
