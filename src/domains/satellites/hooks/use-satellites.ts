@@ -6,7 +6,22 @@ import { clearTLECache } from "../api/tle-cache";
 
 // TODO: Move to an other folder
 async function loadDefaultSatellites(): Promise<ISatellite[]> {
-  const names = ["ISS (ZARYA)", "CALSPHERE 2", "LAGEOS 1", "TDRS 5", "POLAR", "CUBESAT XI-IV (CO-57)", "GAOFEN-14 02"];
+  const names = [
+    "AMC-3",
+    "ASTRA 4A",
+    "CALSPHERE 2",
+    "COSMOS 2484",
+    "FORTE",
+    "HORIZONS-2",
+    "HTV-X1",
+    "ISS (ZARYA)",
+    "LAGEOS 1",
+    "NAVSTAR 43 (USA 132)",
+    "POLAR",
+    "STARLINK-31874",
+    "TDRS 5",
+    "WILDBLUE-1"
+  ];
   const results = await Promise.all(
     names.map(async (name) => {
       const tle = await fetchTLE(name);

@@ -13,9 +13,13 @@ export class SatelliteController {
     this.engine.add(id, color);
   }
 
+  clearTrail(id: string) {
+    this.engine.clearTrail(id);
+  }
+
   /** Update a satellite’s position and trail geometry. */
-  update(id: string, pos: Vec3, trail: Vec3[]) {
-    this.engine.update(id, pos, trail);
+  update(id: string, pos: Vec3, trail: Vec3[], version: number) {
+    this.engine.update(id, pos, trail, version);
   }
 
   /** Remove a satellite from the scene safely. */

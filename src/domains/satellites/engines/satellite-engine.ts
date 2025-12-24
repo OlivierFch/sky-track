@@ -7,6 +7,7 @@ interface SatelliteData {
   mesh: THREE.Mesh;
   trail: THREE.Line;
   color?: string;
+  version?: number;
 }
 
 /**
@@ -54,8 +55,12 @@ export class SatelliteEngine {
 
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.015, 16, 16), material);
 
-    const trail = new THREE.Line(
-      new THREE.BufferGeometry(),
+    // Persistent empty geometry/line (we’ll just fill/update the buffer)
+    const trailGeom = new THREE.BufferGeometry();
+    // start with an empty attribute; we’ll replace buffer in update()
+    trailGeom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(0), 3));
+    const trailLine = new THREE.Line(
+      trailGeom,
       new THREE.LineBasicMaterial({
         color,
         transparent: true,
@@ -64,24 +69,58 @@ export class SatelliteEngine {
         depthWrite: false,
       })
     );
+    trailLine.frustumCulled = false; // long arcs shouldn’t be culled
 
-    this.scene.add(mesh, trail);
-    this.satellites.set(id, { id, mesh, trail, color });
+    this.scene.add(mesh, trailLine);
+    this.satellites.set(id, { id, mesh, trail: trailLine, color });
   }
 
   /** Update a satellite’s position and trail geometry each frame. */
-  public update(id: string, position: Vec3, trailPoints: Vec3[]) {
+  public update(id: string, position: Vec3, trailPoints: Vec3[], version: number) {
     const sat = this.satellites.get(id);
     if (!sat) return;
 
+    // ✅ Ignore older trail updates
+    if (sat.version !== undefined && version < sat.version) return;
+
+    sat.version = version;
+
+    // Update satellite position
     sat.mesh.position.set(position.x, position.y, position.z);
 
-    const vertices = new Float32Array(trailPoints.flatMap((p) => [p.x, p.y, p.z]));
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+    // ✅ ALWAYS recreate geometry to ensure previous trail is gone
+    const geom = new THREE.BufferGeometry();
+    const vertices = new Float32Array(trailPoints.length * 3);
 
+    let i = 0;
+    for (const p of trailPoints) {
+      vertices[i++] = p.x;
+      vertices[i++] = p.y;
+      vertices[i++] = p.z;
+    }
+
+    geom.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+    geom.setDrawRange(0, trailPoints.length);
+
+    // Dispose old geometry to avoid memory leaks
     sat.trail.geometry.dispose();
-    sat.trail.geometry = geometry;
+
+    // Replace geometry with fresh trail data
+    sat.trail.geometry = geom;
+  }
+
+  public clearTrail(id: string) {
+    const sat = this.satellites.get(id);
+    if (!sat) return;
+
+    const geom = sat.trail.geometry as THREE.BufferGeometry;
+    // dispose old geometry and replace with an empty one
+    geom.dispose();
+    const empty = new THREE.BufferGeometry();
+    empty.setAttribute("position", new THREE.BufferAttribute(new Float32Array(0), 3));
+    sat.trail.geometry = empty;
+    // reset version so next update is always accepted
+    sat.version = undefined;
   }
 
   /** Select a satellite by ID (used by sidebar clicks). */

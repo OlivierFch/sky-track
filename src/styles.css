@@ -5,8 +5,8 @@ body, html, #root, .app {
   height: 100%;
   width: 100vw;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #000; /* deep black background */
-  color: #d1d5db; /* soft light gray */
+  background-color: #000;
+  color: #d1d5db;
 }
 
 /* Layout */
@@ -16,6 +16,10 @@ body, html, #root, .app {
   height: 100%;
   width: 100%;
 
+}
+
+li {
+  list-style: none;
 }
 
 /* Sidebars */

@@ -23,7 +23,7 @@ const App = () => {
       setSelectedSatelliteId((prev) => (prev === id ? null : id)); // toggle behavior
     }, [selectedSatelliteId]);
 
-    // Press "h" to change to focus mode
+    // Press "h" to change to globe visibility mode
     useKeyShortcut("h", handleVisibilityToggle);
 
     // TODO: See to separate in different files css style
