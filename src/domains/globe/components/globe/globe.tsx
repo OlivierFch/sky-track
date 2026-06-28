@@ -1,77 +1,89 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { ISatellite, GlobeVisibility } from "../../../../core/types";
 import { Satellite } from "../../../satellites/components/satellite";
-import { SatelliteController } from "../../../satellites/engines/satellite-controller";
+import { SatelliteEngine } from "../../../satellites/engines/satellite-engine";
 import { GlobeEngine } from "../../engines/globe-engine";
 import { GlobeHint } from "../globe-hint/globe-hint";
 
 interface GlobeProps {
-    satellites: ISatellite[];
-    globeVisibility?: GlobeVisibility;
-    selectedSatelliteId?: string | null;
-    onSatelliteSelect?: (id: string | null) => void;
+  satellites: ISatellite[];
+  globeVisibility?: GlobeVisibility;
+  showTrails?: boolean;
+  selectedSatelliteId?: string | null;
+  onSatelliteSelect?: (id: string | null) => void;
 }
 
-const Globe = ({
-    satellites,
-    globeVisibility = "visible",
-    onSatelliteSelect,
-    selectedSatelliteId
-}: GlobeProps) => {
-    const mountRef = useRef<HTMLDivElement | null>(null);
-    const engineRef = useRef<GlobeEngine | null>(null);
-    const satellitecontrollerRef = useRef<SatelliteController | null>(null);
-    const [hasInteracted, setHasInteracted] = useState(false);
-    
+interface GlobeHandle {
+  focusSun: () => void;
+  focusEarth: () => void;
+}
 
+const Globe = forwardRef<GlobeHandle, GlobeProps>(({
+  satellites,
+  globeVisibility = "visible",
+  showTrails = true,
+  onSatelliteSelect,
+  selectedSatelliteId,
+}, ref) => {
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const engineRef = useRef<GlobeEngine | null>(null);
+  const satelliteEngineRef = useRef<SatelliteEngine | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
-    // Initialize the engine on mount
-    useEffect(() => {
-        if (!mountRef.current) return;
+  useImperativeHandle(ref, () => ({
+    focusSun: () => engineRef.current?.focusSun(),
+    focusEarth: () => engineRef.current?.focusEarth(),
+  }));
 
-        const engine = new GlobeEngine(mountRef.current, () => setHasInteracted(true));
-        const satelliteEngine = engine.getSatelliteEngine();
+  useEffect(() => {
+    if (!mountRef.current) return;
 
-        if (onSatelliteSelect) satelliteEngine.onSatelliteSelected(onSatelliteSelect);
+    const engine = new GlobeEngine(mountRef.current, () => setHasInteracted(true));
+    const satelliteEngine = engine.getSatelliteEngine();
 
-        const satelliteController = new SatelliteController(satelliteEngine);
-        engineRef.current = engine;
-        satellitecontrollerRef.current = satelliteController;
+    if (onSatelliteSelect) satelliteEngine.onSatelliteSelected(onSatelliteSelect);
 
-        return () => engine.dispose();
-    }, []);
+    engineRef.current = engine;
+    satelliteEngineRef.current = satelliteEngine;
 
-    // Update globe visibility
-    useEffect(() => {
-        if (!engineRef.current) return;
-        engineRef.current.setGlobeVisibility(globeVisibility);
-    }, [globeVisibility]);
+    return () => engine.dispose();
+  }, []);
 
-    useEffect(() => {
+  useEffect(() => {
+    if (!engineRef.current) return;
+    engineRef.current.setGlobeVisibility(globeVisibility);
+  }, [globeVisibility]);
+
+  useEffect(() => {
+    engineRef.current?.setTrailsVisible(showTrails);
+  }, [showTrails]);
+
+  useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
-
     if (selectedSatelliteId) {
-        engine.selectSatelliteById(selectedSatelliteId);
+      engine.selectSatelliteById(selectedSatelliteId);
     } else {
-        engine.clearSatelliteSelection();
+      engine.clearSatelliteSelection();
     }
-    }, [selectedSatelliteId]);
+  }, [selectedSatelliteId]);
 
+  return (
+    <div ref={mountRef} style={{ width: "100%", height: "100%" }}>
+      {engineRef.current && satelliteEngineRef.current &&
+        satellites.map((satellite) => (
+          <Satellite
+            key={satellite.id}
+            satellite={satellite}
+            controller={satelliteEngineRef.current}
+          />
+        ))}
+      {!hasInteracted && <GlobeHint />}
+    </div>
+  );
+});
 
-    return (
-        <div ref={mountRef} style={{ width: "100%", height: "100%" }}>
-        {engineRef.current && satellitecontrollerRef.current &&
-            satellites.map((satellite) => (
-            <Satellite
-                key={satellite.id}
-                satellite={satellite}
-                controller={satellitecontrollerRef.current}
-            />
-            ))}
-            {!hasInteracted && <GlobeHint />}
-        </div>
-    );
-};
+Globe.displayName = "Globe";
 
 export { Globe };
+export type { GlobeHandle };

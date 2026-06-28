@@ -1,55 +1,64 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useSatellites } from "../domains/satellites/hooks/use-satellites";
 import { GlobeVisibility } from "../core/types";
-import { Globe } from "../domains/globe/components/globe/globe";
-import { Layout } from "../ui/layouts/layout/layout";
+import { Globe, GlobeHandle } from "../domains/globe/components/globe/globe";
 import { LeftSidebar } from "../ui/layouts/left-sidebar/left-sidebar";
-import { View } from "../ui/layouts/view/view";
-import { useKeyShortcut } from "../hooks/use-key-shortcut";
 import { RightSidebar } from "../ui/layouts/right-sidebar/right-sidebar";
+import { useKeyShortcut } from "../hooks/use-key-shortcut";
 import "../styles.css";
 
-
 const App = () => {
-    const { satellites, selectedSatelliteId, setSelectedSatelliteId } = useSatellites();
-    const [globeVisibility, setGlobeVisibility] = useState<GlobeVisibility>("visible");
+  const { satellites, selectedSatelliteId, setSelectedSatelliteId } = useSatellites();
+  const [globeVisibility, setGlobeVisibility] = useState<GlobeVisibility>("visible");
+  const [showTrails, setShowTrails] = useState(true);
+  const globeRef = useRef<GlobeHandle>(null);
 
-    const handleVisibilityToggle = useCallback(() => {
-      const newMode: GlobeVisibility = globeVisibility === "visible" ? "hidden" : "visible";
-      setGlobeVisibility(newMode);
-    }, [globeVisibility]);
+  const handleVisibilityToggle = useCallback(() => {
+    setGlobeVisibility(v => v === "visible" ? "hidden" : "visible");
+  }, []);
 
-    const handleSatelliteSidebarSelect = useCallback((id: string) => {
-      setSelectedSatelliteId((prev) => (prev === id ? null : id)); // toggle behavior
-    }, [selectedSatelliteId]);
+  const handleTrailsToggle = useCallback(() => setShowTrails(v => !v), []);
 
-    // Press "h" to change to globe visibility mode
-    useKeyShortcut("h", handleVisibilityToggle);
+  const handleSatelliteSidebarSelect = useCallback((id: string) => {
+    setSelectedSatelliteId(prev => prev === id ? null : id);
+  }, []);
 
-    // TODO: See to separate in different files css style
-    return (
-      <Layout>
-        <LeftSidebar
-              satellites={satellites}
-              onSelect={handleSatelliteSidebarSelect}
-              onToggleVisibility={handleVisibilityToggle}
-              isGlobeVisible={globeVisibility === "visible"}
-              selectedSatelliteId={selectedSatelliteId}
+  const handleFocusSun = useCallback(() => globeRef.current?.focusSun(), []);
+  const handleFocusEarth = useCallback(() => globeRef.current?.focusEarth(), []);
+
+  useKeyShortcut("h", handleVisibilityToggle);
+
+  return (
+    <div className="app">
+      <LeftSidebar
+        satellites={satellites}
+        onSelect={handleSatelliteSidebarSelect}
+        onToggleVisibility={handleVisibilityToggle}
+        isGlobeVisible={globeVisibility === "visible"}
+        showTrails={showTrails}
+        onToggleTrails={handleTrailsToggle}
+        onFocusSun={handleFocusSun}
+        onFocusEarth={handleFocusEarth}
+        selectedSatelliteId={selectedSatelliteId}
+      />
+
+      <div className="view">
+        <Globe
+          ref={globeRef}
+          satellites={satellites}
+          selectedSatelliteId={selectedSatelliteId}
+          globeVisibility={globeVisibility}
+          showTrails={showTrails}
+          onSatelliteSelect={setSelectedSatelliteId}
         />
+      </div>
 
-        <View>
-          <Globe
-            satellites={satellites}
-            selectedSatelliteId={selectedSatelliteId}
-            globeVisibility={globeVisibility}
-            onSatelliteSelect={setSelectedSatelliteId}
-          />
-        </View>
-
-        <RightSidebar />
-      </Layout>
-    );
-
+      <RightSidebar
+        satellites={satellites}
+        selectedSatelliteId={selectedSatelliteId}
+      />
+    </div>
+  );
 };
 
 export { App };
