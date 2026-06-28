@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { SatelliteController } from "../engines/satellite-controller";
+import { memo, useEffect } from "react";
+import { SatelliteEngine } from "../engines/satellite-engine";
 import { latLonToCartesian } from "../utils/orbit";
 import { ISatellite } from "../../../core/types";
 import { useSatellitePosition } from "../hooks/use-satellite-position";
@@ -7,49 +7,35 @@ import { useSatelliteTrail } from "../hooks/use-satellite-trail";
 
 type SatelliteProps = {
   satellite: ISatellite;
-  controller: SatelliteController | null;
+  controller: SatelliteEngine | null;
 };
 
-const Satellite = ({ satellite, controller }: SatelliteProps) => {
-    const { id, color, tle } = satellite;
+const SatelliteInner = ({ satellite, controller }: SatelliteProps) => {
+  const { id, color, tle } = satellite;
 
-    // Live satellite position (updates every animation frame or tick)
-    const pos = useSatellitePosition(tle);
+  const pos = useSatellitePosition(tle);
+  const { trail, version } = useSatelliteTrail(tle);
 
-    // Orbit/trail computation (async, chunked)
-    const { trail, version } = useSatelliteTrail(tle, { radius: 1.04 });
+  useEffect(() => {
+    if (!controller) return;
+    controller.add(id, color);
+    return () => controller.removeSatelliteById(id);
+  }, [controller, id, color]);
 
-    /**
-     * ✅ Add/remove satellite mesh + line on mount/unmount
-     */
-    useEffect(() => {
-        if (!controller) return;
+  useEffect(() => {
+    if (!controller) return;
+    controller.clearTrail(id);
+  }, [controller, id, tle]);
 
-        controller.add(id, color);
-        return () => controller.remove(id);
-    }, [controller, id, color]);
+  useEffect(() => {
+    if (!controller || !pos || trail.length === 0) return;
+    const positionInVec3 = latLonToCartesian(pos.lat, pos.lon, pos.sceneRadius);
+    controller.update(id, positionInVec3, trail, version);
+  }, [controller, id, pos, trail, version]);
 
-    /**
-     * ✅ Clear the trail immediately when TLE changes
-     *    (important: makes ghost trails impossible)
-     */
-    useEffect(() => {
-        if (!controller) return;
-        controller.clearTrail(id);
-    }, [controller, id, tle]); // run strictly when satellite.tle changes
-
-    /**
-     * ✅ Update mesh position + trail geometry
-     *    Only once trail is computed
-     */
-    useEffect(() => {
-        if (!controller || !pos || trail.length === 0) return;
-
-        const positionInVec3 = latLonToCartesian(pos.lat, pos.lon, 1.04);
-        controller.update(id, positionInVec3, trail, version);
-    }, [controller, id, pos, trail, version]);
-
-    return null;
+  return null;
 };
+
+const Satellite = memo(SatelliteInner);
 
 export { Satellite };

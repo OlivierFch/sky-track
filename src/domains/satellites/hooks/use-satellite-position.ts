@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { getLatLonAltFromTLE } from "../utils/orbit";
-import { TLE, LatLngAlt } from "../../../core/types";
+import { TLE } from "../../../core/types";
 
 const useSatellitePosition = (tle: TLE) => {
-  const [position, setPosition] = useState<LatLngAlt | null>(null);
+  const [position, setPosition] = useState<ReturnType<typeof getLatLonAltFromTLE>>(null);
 
   useEffect(() => {
     const update = () => setPosition(getLatLonAltFromTLE(tle));

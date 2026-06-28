@@ -140,6 +140,13 @@ export class SatelliteEngine {
   }
 
 
+  /** Show or hide all satellite trail lines. */
+  public setTrailsVisible(visible: boolean) {
+    for (const { trail } of this.satellites.values()) {
+      trail.visible = visible;
+    }
+  }
+
   /** Deselect all satellites and stop following. */
   public clearSelection() {
     this.resetEmissive();

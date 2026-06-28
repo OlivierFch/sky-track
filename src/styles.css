@@ -38,16 +38,88 @@ li {
 
 .sidebar.left { border-right: 1px solid #1a1a1a; }
 
-.satellite_item {
+/* Globe toggle */
+.globe-toggle {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid #2d2d2d;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
 }
 
-.satellite_item.is-selected {
-  background: rgba(255, 204, 0, 0.1);
-  border-left: 3px solid #ffcc00;
+.globe-toggle.active {
+  border-color: #3b82f6;
+  color: #93c5fd;
 }
 
+.globe-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b3b3b;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.globe-toggle.active .globe-toggle-dot {
+  background: #3b82f6;
+}
+
+/* Satellite list */
+.satellites-card {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.satellites-card ul {
+  overflow-y: auto;
+  flex: 1;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.satellite-count {
+  font-size: 0.72rem;
+  font-weight: normal;
+  color: #6b7280;
+  background: #1f1f1f;
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.satellite-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.satellite-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.satellite-item.is-selected {
+  background: rgba(255, 204, 0, 0.08);
+  border-left-color: #ffcc00;
+}
 
 .footer {
   display: flex;
@@ -67,6 +139,58 @@ li {
 }
 
 .sidebar.right { border-left: 1px solid #1a1a1a; }
+
+.satellite-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.satellite-detail-header h2 {
+  margin: 0;
+}
+
+.satellite-detail-data {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+}
+
+.satellite-detail-data dt {
+  color: #6b7280;
+  font-size: 0.8rem;
+  align-self: center;
+}
+
+.satellite-detail-data dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-placeholder {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.color-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid #1a1a1a;
+  padding-top: 12px;
+}
+
+.color-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #d1d5db;
+}
 
 .hint {
   position: absolute;
@@ -103,7 +227,7 @@ h1 {
 h2 {
   font-size: 1.1rem;
   color: #e5e7eb;
-  margin-bottom: 0.25rem;
+  margin: 0 0 0.25rem;
 }
 
 /* Responsive Layout */

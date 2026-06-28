@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { twoline2satrec } from "satellite.js";
 import { TLE, Vec3 } from "../../../core/types";
-import { getLatLonAltFromTLE, latLonToCartesian } from "../utils/orbit";
+import { getLatLonAltFromTLE, latLonToCartesian, getSatrec } from "../utils/orbit";
 
 type TrailOptions = {
-  stepSec?: number;   // finer sample = smoother orbit
-  radius?: number;
+  stepSec?: number;
 };
 
 const CHUNK_DURATION_MS = 6; // limit blocking to prevent "Violation"
@@ -14,14 +12,14 @@ const useSatelliteTrail = (
   tle: TLE | null,
   opts: TrailOptions = {}
 ) => {
-  const { stepSec = 5, radius = 1.03 } = opts;
+  const { stepSec = 5 } = opts;
   const [trail, setTrail] = useState<Vec3[]>([]);
   const [version, setVersion] = useState(0);
 
-  // compute orbital period from tle once
+  // compute orbital period from tle once (reuses cached satrec)
   const periodSec = useMemo(() => {
     if (!tle) return null;
-    const satrec = twoline2satrec(tle.line1, tle.line2);
+    const satrec = getSatrec(tle);
     return (2 * Math.PI) / satrec.no * 60; // rad/min -> sec
   }, [tle]);
 
@@ -42,7 +40,7 @@ const useSatelliteTrail = (
         const start = performance.now();
         while (t <= periodSec && performance.now() - start < CHUNK_DURATION_MS) {
           const pos = getLatLonAltFromTLE(tle, new Date(now + t * 1000));
-          if (pos) pts.push(latLonToCartesian(pos.lat, pos.lon, radius));
+          if (pos) pts.push(latLonToCartesian(pos.lat, pos.lon, pos.sceneRadius));
           t += stepSec;
         }
 
@@ -63,7 +61,7 @@ const useSatelliteTrail = (
       cancelled = true;
       if (idleId !== null) cancelIdleCallback(idleId);   // ✅ CANCEL PENDING IDLE JOB
     };
-  }, [tle, periodSec, stepSec, radius]);
+  }, [tle, periodSec, stepSec]);
 
 
   return { trail, version };

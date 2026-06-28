@@ -7,7 +7,7 @@ const fetchTLE = async (name: string): Promise<TLE> => {
   if (cached) return cached;
 
   // Fetch new data
-  const url = `https://celestrak.org/NORAD/elements/gp.php?NAME=${encodeURIComponent(name)}&FORMAT=TLE`;
+  const url = `https://celestrak.org/NORAD/elements/gp.php?NAME=${encodeURIComponent(name)}&FORMAT=tle`;
   const response = await fetch(url);
 
   if (!response.ok) {
