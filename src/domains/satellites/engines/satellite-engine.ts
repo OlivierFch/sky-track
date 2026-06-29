@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Vec3 } from "../../../core/types";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { EARTH_RADIUS_KM, latLonToCartesian } from "../utils/orbit";
 
 interface SatelliteData {
   id: string;
@@ -21,6 +22,8 @@ export class SatelliteEngine {
   private selectedId: string | null = null;
   private onSelect?: (id: string | null) => void;
   private followSelected = false;
+  private footprintRing: THREE.LineLoop | null = null;
+  private footprintFill: THREE.Mesh | null = null;
 
   constructor(
     private scene: THREE.Scene,
@@ -149,10 +152,56 @@ export class SatelliteEngine {
 
   /** Deselect all satellites and stop following. */
   public clearSelection() {
+    this.disposeFootprint();
     this.resetEmissive();
     this.selectedId = null;
     this.followSelected = false;
     this.onSelect?.(null);
+  }
+
+  /** Update the footprint circle for the currently selected satellite. */
+  public updateFootprint(id: string, lat: number, lon: number, altKm: number): void {
+    if (id !== this.selectedId || !this.footprintRing || !this.footprintFill) return;
+
+    const rho = Math.acos(Math.min(1, EARTH_RADIUS_KM / (EARTH_RADIUS_KM + altKm)));
+    const N = 64;
+    const R = 1.025; // outside atmosphere shell (r=1.02) so depth test passes
+
+    const { x, y, z } = latLonToCartesian(lat, lon, 1);
+    const n = new THREE.Vector3(x, y, z).normalize();
+    const arbitrary = Math.abs(n.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const u = new THREE.Vector3().crossVectors(n, arbitrary).normalize();
+    const v = new THREE.Vector3().crossVectors(n, u);
+
+    const ring: THREE.Vector3[] = [];
+    for (let i = 0; i < N; i++) {
+      const theta = (i / N) * Math.PI * 2;
+      ring.push(
+        n.clone().multiplyScalar(Math.cos(rho))
+          .addScaledVector(u, Math.sin(rho) * Math.cos(theta))
+          .addScaledVector(v, Math.sin(rho) * Math.sin(theta))
+          .multiplyScalar(R)
+      );
+    }
+
+    const ringArr = new Float32Array(N * 3);
+    ring.forEach((p, i) => { ringArr[i * 3] = p.x; ringArr[i * 3 + 1] = p.y; ringArr[i * 3 + 2] = p.z; });
+    const oldRing = this.footprintRing.geometry;
+    this.footprintRing.geometry = new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(ringArr, 3));
+    oldRing.dispose();
+
+    const center = n.clone().multiplyScalar(R);
+    const fillArr = new Float32Array(N * 9);
+    for (let i = 0; i < N; i++) {
+      const a = ring[i], b = ring[(i + 1) % N];
+      fillArr.set([center.x, center.y, center.z, a.x, a.y, a.z, b.x, b.y, b.z], i * 9);
+    }
+    const oldFill = this.footprintFill.geometry;
+    this.footprintFill.geometry = new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(fillArr, 3));
+    oldFill.dispose();
+
+    this.footprintRing.visible = true;
+    this.footprintFill.visible = true;
   }
 
   /** Animate glow intensity over time (for unselected satellites). */
@@ -193,6 +242,7 @@ export class SatelliteEngine {
 
   /** Remove all satellites and cleanup listeners/materials. */
   public disposeAll() {
+    this.disposeFootprint();
     this.satellites.forEach((_, id) => this.remove(id));
     this.domElement?.removeEventListener("click", this.handleClick);
   }
@@ -234,6 +284,37 @@ export class SatelliteEngine {
     mat.emissiveIntensity = 1.2;
     this.selectedId = id;
     this.followSelected = true;
+
+    this.disposeFootprint();
+    const color = sat.color ?? "#22c55e";
+    this.footprintRing = new THREE.LineLoop(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 })
+    );
+    this.footprintFill = new THREE.Mesh(
+      new THREE.BufferGeometry(),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false })
+    );
+    this.footprintRing.frustumCulled = false;
+    this.footprintFill.frustumCulled = false;
+    this.footprintRing.visible = false;
+    this.footprintFill.visible = false;
+    this.scene.add(this.footprintRing, this.footprintFill);
+  }
+
+  private disposeFootprint(): void {
+    if (this.footprintRing) {
+      this.scene.remove(this.footprintRing);
+      this.footprintRing.geometry.dispose();
+      (this.footprintRing.material as THREE.Material).dispose();
+      this.footprintRing = null;
+    }
+    if (this.footprintFill) {
+      this.scene.remove(this.footprintFill);
+      this.footprintFill.geometry.dispose();
+      (this.footprintFill.material as THREE.Material).dispose();
+      this.footprintFill = null;
+    }
   }
 
   private resetEmissive() {

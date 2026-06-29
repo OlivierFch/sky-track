@@ -33,6 +33,11 @@ const SatelliteInner = ({ satellite, controller }: SatelliteProps) => {
     controller.update(id, positionInVec3, trail, version);
   }, [controller, id, pos, trail, version]);
 
+  useEffect(() => {
+    if (!pos) return;
+    controller?.updateFootprint(id, pos.lat, pos.lon, pos.alt);
+  }, [controller, id, pos]);
+
   return null;
 };
 
