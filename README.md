@@ -9,6 +9,8 @@
 - Orbital trails showing recent trajectory
 - Dynamic glow effects — satellites pulse when idle and highlight on selection
 - Camera focus — click or select a satellite to smoothly center and follow it
+- Coverage footprint — ground coverage cone projected on Earth for the selected satellite
+- Starlink laser mesh network — inter-satellite optical links visualized as a dynamic mesh between nearby Starlink satellites
 - Sidebar satellite list with color indicators
 
 ### ☀️ Solar system visualization
