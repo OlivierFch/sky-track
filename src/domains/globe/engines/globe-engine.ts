@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { GlobeVisibility } from "../../../core/types";
+import { GlobeVisibility, TLE } from "../../../core/types";
 import { SatelliteEngine } from "../../satellites/engines/satellite-engine";
+import { LaserMeshEngine } from "./laser-mesh-engine";
 import { getSunData } from "../utils/solar-position";
 import { getPlanetPositions, getPlanetOrbitPoints } from "../utils/planetary-positions";
 
@@ -24,6 +25,8 @@ export class GlobeEngine {
   private raf = 0;
   private ro: ResizeObserver;
   private satellites: SatelliteEngine;
+  private laserNetwork: LaserMeshEngine | null = null;
+  private lastFrameTime = 0;
   public controls: OrbitControls;
 
   constructor(private mount: HTMLDivElement, private onFirstInteraction?: () => void) {
@@ -166,8 +169,11 @@ export class GlobeEngine {
     this.planetMeshes.mars.position.set(planets.mars.x, planets.mars.y, planets.mars.z);
   }
 
-  private animate(): void {
+  private animate(time = 0): void {
     this.raf = requestAnimationFrame(this.animate);
+    const deltaMs = this.lastFrameTime === 0 ? 0 : time - this.lastFrameTime;
+    this.lastFrameTime = time;
+
     if (this.lerpTarget && this.lerpCamera) {
       this.camera.position.lerp(this.lerpCamera, 0.08);
       this.controls.target.lerp(this.lerpTarget, 0.08);
@@ -178,12 +184,26 @@ export class GlobeEngine {
     }
     this.controls.update();
 
-    const elapsed = performance.now();
-    this.satellites.updateGlowPulse(elapsed);
+    this.satellites.updateGlowPulse(time);
     this.satellites.updateCameraFollow();
+    this.laserNetwork?.tick(deltaMs);
     this.updateSun();
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  enableLaserNetwork(tles: TLE[]) {
+    if (!this.laserNetwork) {
+      this.laserNetwork = new LaserMeshEngine(this.scene);
+    }
+    this.laserNetwork.setTLEs(tles);
+    this.laserNetwork.setVisible(true);
+  }
+
+  disableLaserNetwork() {
+    this.laserNetwork?.setVisible(false);
+    this.laserNetwork?.dispose();
+    this.laserNetwork = null;
   }
 
   getSatelliteEngine() {
@@ -233,6 +253,7 @@ export class GlobeEngine {
     cancelAnimationFrame(this.raf);
     this.ro?.disconnect();
     this.satellites.disposeAll();
+    this.laserNetwork?.dispose();
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement === this.mount) {
       this.mount.removeChild(this.renderer.domElement);

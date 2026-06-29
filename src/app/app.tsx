@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSatellites } from "../domains/satellites/hooks/use-satellites";
+import { useStarlinkNetwork } from "../domains/satellites/hooks/use-starlink-network";
 import { GlobeVisibility } from "../core/types";
 import { Globe, GlobeHandle } from "../domains/globe/components/globe/globe";
 import { LeftSidebar } from "../ui/layouts/left-sidebar/left-sidebar";
@@ -11,7 +12,22 @@ const App = () => {
   const { satellites, selectedSatelliteId, setSelectedSatelliteId } = useSatellites();
   const [globeVisibility, setGlobeVisibility] = useState<GlobeVisibility>("visible");
   const [showTrails, setShowTrails] = useState(true);
+  const [starlinkNetworkMode, setStarlinkNetworkMode] = useState(false);
   const globeRef = useRef<GlobeHandle>(null);
+
+  const { tles } = useStarlinkNetwork(starlinkNetworkMode);
+
+  useEffect(() => {
+    if (tles.length > 0) {
+      globeRef.current?.enableLaserNetwork(tles);
+    }
+  }, [tles]);
+
+  useEffect(() => {
+    if (!starlinkNetworkMode) {
+      globeRef.current?.disableLaserNetwork();
+    }
+  }, [starlinkNetworkMode]);
 
   const handleVisibilityToggle = useCallback(() => {
     setGlobeVisibility(v => v === "visible" ? "hidden" : "visible");
@@ -40,6 +56,8 @@ const App = () => {
         onFocusSun={handleFocusSun}
         onFocusEarth={handleFocusEarth}
         selectedSatelliteId={selectedSatelliteId}
+        starlinkNetworkMode={starlinkNetworkMode}
+        onToggleStarlinkNetwork={() => setStarlinkNetworkMode(v => !v)}
       />
 
       <div className="view">
@@ -50,6 +68,7 @@ const App = () => {
           globeVisibility={globeVisibility}
           showTrails={showTrails}
           onSatelliteSelect={setSelectedSatelliteId}
+          showSatellites={!starlinkNetworkMode}
         />
       </div>
 

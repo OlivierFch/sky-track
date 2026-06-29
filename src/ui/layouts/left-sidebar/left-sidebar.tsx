@@ -12,6 +12,8 @@ interface LeftSidebarProps {
   onFocusSun: () => void;
   onFocusEarth: () => void;
   selectedSatelliteId: string | null;
+  starlinkNetworkMode: boolean;
+  onToggleStarlinkNetwork: () => void;
 }
 
 const LeftSidebar: FunctionComponent<LeftSidebarProps> = ({
@@ -24,6 +26,8 @@ const LeftSidebar: FunctionComponent<LeftSidebarProps> = ({
   onFocusSun,
   onFocusEarth,
   selectedSatelliteId,
+  starlinkNetworkMode,
+  onToggleStarlinkNetwork,
 }) => (
   <div className="sidebar left">
     <h1>SkyTrack</h1>
@@ -43,6 +47,13 @@ const LeftSidebar: FunctionComponent<LeftSidebarProps> = ({
       >
         <span className="globe-toggle-dot" />
         {showTrails ? "Visible trajectories" : "Hidden trajectories"}
+      </button>
+      <button
+        className={`globe-toggle${starlinkNetworkMode ? " active" : ""}`}
+        onClick={onToggleStarlinkNetwork}
+      >
+        <span className="globe-toggle-dot" style={starlinkNetworkMode ? { background: "#4488ff" } : undefined} />
+        {starlinkNetworkMode ? "Starlink network ON" : "Starlink network"}
       </button>
     </div>
 

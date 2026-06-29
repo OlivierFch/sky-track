@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { ISatellite, GlobeVisibility } from "../../../../core/types";
+import { ISatellite, GlobeVisibility, TLE } from "../../../../core/types";
 import { Satellite } from "../../../satellites/components/satellite";
 import { SatelliteEngine } from "../../../satellites/engines/satellite-engine";
 import { GlobeEngine } from "../../engines/globe-engine";
@@ -11,11 +11,14 @@ interface GlobeProps {
   showTrails?: boolean;
   selectedSatelliteId?: string | null;
   onSatelliteSelect?: (id: string | null) => void;
+  showSatellites?: boolean;
 }
 
 interface GlobeHandle {
   focusSun: () => void;
   focusEarth: () => void;
+  enableLaserNetwork: (tles: TLE[]) => void;
+  disableLaserNetwork: () => void;
 }
 
 const Globe = forwardRef<GlobeHandle, GlobeProps>(({
@@ -24,6 +27,7 @@ const Globe = forwardRef<GlobeHandle, GlobeProps>(({
   showTrails = true,
   onSatelliteSelect,
   selectedSatelliteId,
+  showSatellites = true,
 }, ref) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<GlobeEngine | null>(null);
@@ -33,6 +37,8 @@ const Globe = forwardRef<GlobeHandle, GlobeProps>(({
   useImperativeHandle(ref, () => ({
     focusSun: () => engineRef.current?.focusSun(),
     focusEarth: () => engineRef.current?.focusEarth(),
+    enableLaserNetwork: (tles: TLE[]) => engineRef.current?.enableLaserNetwork(tles),
+    disableLaserNetwork: () => engineRef.current?.disableLaserNetwork(),
   }));
 
   useEffect(() => {
@@ -70,7 +76,7 @@ const Globe = forwardRef<GlobeHandle, GlobeProps>(({
 
   return (
     <div ref={mountRef} style={{ width: "100%", height: "100%" }}>
-      {engineRef.current && satelliteEngineRef.current &&
+      {engineRef.current && satelliteEngineRef.current && showSatellites &&
         satellites.map((satellite) => (
           <Satellite
             key={satellite.id}
